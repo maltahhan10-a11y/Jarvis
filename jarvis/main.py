@@ -202,6 +202,7 @@ async def run_full():
     from jarvis.core.server import (
         app,
         brain,
+        broadcast_glow_event,
         broadcast_overlay_state,
         broadcast_voice_chunk,
         broadcast_voice_interaction,
@@ -256,6 +257,7 @@ async def run_full():
         def on_wake():
             logger.info("* Wake word detected *")
             _spawn_background(broadcast_overlay_state("listening"))
+            _spawn_background(broadcast_glow_event("wake"))
 
         async def _speak_response(response: str):
             """Speak a response and broadcast to all UI clients."""
@@ -281,6 +283,7 @@ async def run_full():
             )
             await broadcast_voice_state(False)
             await broadcast_overlay_state("idle")
+            await broadcast_glow_event("sleep")
             listener.set_speaking(False)
 
         def _needs_async_execution(text: str) -> bool:

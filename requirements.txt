@@ -37,6 +37,11 @@ beautifulsoup4>=4.12.0
 playwright>=1.49.0
 pycookiecheat>=0.8.0
 
+# Face Recognition
+insightface>=0.7.3
+opencv-python>=4.10.0
+onnxruntime>=1.19.0
+
 # Utilities
 python-dotenv>=1.0.0
 pyyaml>=6.0.0

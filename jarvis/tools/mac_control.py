@@ -362,6 +362,364 @@ async def paste_to_app(text: str, app_name: str, new_document: bool = True) -> s
     return f"Pasted {len(text)} characters into {app_name} successfully."
 
 
+async def get_wifi_status() -> str:
+    """Get current Wi-Fi network name and status."""
+    try:
+        process = await asyncio.create_subprocess_exec(
+            "networksetup", "-getairportnetwork", "en0",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, _ = await process.communicate()
+        output = stdout.decode().strip()
+        if "not associated" in output.lower():
+            return "Wi-Fi is on but not connected to any network."
+        return output
+    except Exception as e:
+        return f"Error getting Wi-Fi status: {e}"
+
+
+async def toggle_wifi(enable: bool) -> str:
+    """Turn Wi-Fi on or off."""
+    action = "on" if enable else "off"
+    try:
+        process = await asyncio.create_subprocess_exec(
+            "networksetup", "-setairportpower", "en0", action,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        _, stderr = await process.communicate()
+        if process.returncode != 0:
+            return f"Failed to turn Wi-Fi {action}: {stderr.decode().strip()}"
+        return f"Wi-Fi turned {action}."
+    except Exception as e:
+        return f"Error toggling Wi-Fi: {e}"
+
+
+async def get_bluetooth_status() -> str:
+    """Get Bluetooth power state."""
+    script = '''
+    do shell script "defaults read /Library/Preferences/com.apple.Bluetooth ControllerPowerState 2>/dev/null || echo -1"
+    '''
+    result = await run_applescript(script)
+    try:
+        state = int(result.strip())
+        if state == 1:
+            return "Bluetooth is on."
+        elif state == 0:
+            return "Bluetooth is off."
+    except ValueError:
+        pass
+    return f"Bluetooth status: {result}"
+
+
+async def toggle_dark_mode() -> str:
+    """Toggle macOS dark mode."""
+    script = '''
+    tell application "System Events"
+        tell appearance preferences
+            set dark mode to not dark mode
+            if dark mode then
+                return "Dark mode enabled."
+            else
+                return "Light mode enabled."
+            end if
+        end tell
+    end tell
+    '''
+    return await run_applescript(script)
+
+
+async def get_dark_mode_status() -> str:
+    """Check if dark mode is currently enabled."""
+    script = '''
+    tell application "System Events"
+        tell appearance preferences
+            if dark mode then
+                return "Dark mode is on."
+            else
+                return "Dark mode is off (light mode)."
+            end if
+        end tell
+    end tell
+    '''
+    return await run_applescript(script)
+
+
+async def lock_screen() -> str:
+    """Lock the screen immediately."""
+    try:
+        process = await asyncio.create_subprocess_exec(
+            "pmset", "displaysleepnow",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        await process.communicate()
+        return "Screen locked."
+    except Exception as e:
+        return f"Error locking screen: {e}"
+
+
+async def media_play_pause() -> str:
+    """Toggle play/pause for the current media."""
+    script = '''
+    tell application "System Events"
+        key code 49 using {command down}
+    end tell
+    '''
+    try:
+        process = await asyncio.create_subprocess_exec(
+            "osascript", "-e",
+            'tell application "System Events" to key code 16 using {command down, shift down}',
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        await process.communicate()
+    except Exception:
+        pass
+    script2 = 'do shell script "osascript -e \'tell application \\"Music\\" to playpause\' 2>/dev/null || osascript -e \'tell application \\"Spotify\\" to playpause\' 2>/dev/null || echo \\"No media player responding\\""'
+    return await run_applescript(script2)
+
+
+async def media_next_track() -> str:
+    """Skip to the next track."""
+    script = 'do shell script "osascript -e \'tell application \\"Music\\" to next track\' 2>/dev/null || osascript -e \'tell application \\"Spotify\\" to next track\' 2>/dev/null || echo \\"No media player responding\\""'
+    return await run_applescript(script)
+
+
+async def media_previous_track() -> str:
+    """Go to the previous track."""
+    script = 'do shell script "osascript -e \'tell application \\"Music\\" to previous track\' 2>/dev/null || osascript -e \'tell application \\"Spotify\\" to previous track\' 2>/dev/null || echo \\"No media player responding\\""'
+    return await run_applescript(script)
+
+
+async def get_current_track() -> str:
+    """Get the currently playing track and artist."""
+    script = '''
+    try
+        tell application "Music"
+            if player state is playing then
+                set trackName to name of current track
+                set artistName to artist of current track
+                return "Music: " & trackName & " by " & artistName
+            end if
+        end tell
+    end try
+    try
+        tell application "Spotify"
+            if player state is playing then
+                set trackName to name of current track
+                set artistName to artist of current track
+                return "Spotify: " & trackName & " by " & artistName
+            end if
+        end tell
+    end try
+    return "No music currently playing."
+    '''
+    return await run_applescript(script)
+
+
+async def get_active_displays() -> str:
+    """Get information about connected displays."""
+    try:
+        process = await asyncio.create_subprocess_exec(
+            "system_profiler", "SPDisplaysDataType", "-json",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, _ = await process.communicate()
+        import json
+        data = json.loads(stdout.decode())
+        displays = []
+        for gpu in data.get("SPDisplaysDataType", []):
+            for display in gpu.get("spdisplays_ndrvs", []):
+                name = display.get("_name", "Unknown")
+                res = display.get("_spdisplays_resolution", "Unknown")
+                displays.append(f"{name}: {res}")
+        if not displays:
+            return "No display information available."
+        return "Connected displays:\n" + "\n".join(f"  {d}" for d in displays)
+    except Exception as e:
+        return f"Error getting display info: {e}"
+
+
+async def get_disk_usage() -> str:
+    """Get disk usage for all mounted volumes."""
+    try:
+        process = await asyncio.create_subprocess_exec(
+            "df", "-H", "/",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, _ = await process.communicate()
+        lines = stdout.decode().strip().split("\n")
+        if len(lines) > 1:
+            parts = lines[1].split()
+            if len(parts) >= 5:
+                return f"Disk: {parts[2]} used of {parts[1]} ({parts[4]} full), {parts[3]} free"
+        return stdout.decode().strip()
+    except Exception as e:
+        return f"Error getting disk usage: {e}"
+
+
+async def get_memory_pressure() -> str:
+    """Get current memory usage and pressure."""
+    try:
+        process = await asyncio.create_subprocess_exec(
+            "memory_pressure",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, _ = await asyncio.wait_for(process.communicate(), timeout=5.0)
+        output = stdout.decode().strip()
+        for line in output.split("\n"):
+            if "System-wide memory" in line or "percentage" in line.lower():
+                return line.strip()
+        return output[:300] if output else "Could not determine memory pressure."
+    except Exception as e:
+        return f"Error getting memory pressure: {e}"
+
+
+async def get_cpu_usage() -> str:
+    """Get current CPU usage percentages."""
+    try:
+        process = await asyncio.create_subprocess_exec(
+            "top", "-l", "1", "-n", "0", "-stats", "cpu",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, _ = await asyncio.wait_for(process.communicate(), timeout=10.0)
+        output = stdout.decode()
+        for line in output.split("\n"):
+            if "CPU usage" in line:
+                return line.strip()
+        return "CPU usage data not available."
+    except Exception as e:
+        return f"Error getting CPU usage: {e}"
+
+
+async def get_network_info() -> str:
+    """Get local and public IP addresses."""
+    try:
+        local_proc = await asyncio.create_subprocess_exec(
+            "ipconfig", "getifaddr", "en0",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        local_out, _ = await local_proc.communicate()
+        local_ip = local_out.decode().strip() or "Not connected"
+
+        pub_proc = await asyncio.create_subprocess_exec(
+            "curl", "-s", "-m", "3", "https://api.ipify.org",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        pub_out, _ = await pub_proc.communicate()
+        pub_ip = pub_out.decode().strip() or "Unavailable"
+
+        return f"Local IP (Wi-Fi): {local_ip}\nPublic IP: {pub_ip}"
+    except Exception as e:
+        return f"Error getting network info: {e}"
+
+
+async def get_top_processes(count: int = 5) -> str:
+    """Get the top CPU-consuming processes."""
+    count = max(1, min(count, 20))
+    try:
+        process = await asyncio.create_subprocess_exec(
+            "ps", "-eo", "pid,%cpu,%mem,comm", "-r",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, _ = await process.communicate()
+        lines = stdout.decode().strip().split("\n")
+        header = lines[0] if lines else ""
+        top_lines = lines[1:count + 1]
+        return header + "\n" + "\n".join(top_lines)
+    except Exception as e:
+        return f"Error getting top processes: {e}"
+
+
+async def kill_process(process_name: str) -> str:
+    """Kill a process by name (not system-critical processes)."""
+    protected = ["kernel_task", "launchd", "windowserver", "loginwindow", "dock", "finder"]
+    if process_name.lower() in protected:
+        return f"Cannot kill protected system process: {process_name}"
+    try:
+        process = await asyncio.create_subprocess_exec(
+            "pkill", "-f", process_name,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        _, stderr = await process.communicate()
+        if process.returncode == 0:
+            return f"Killed process: {process_name}"
+        return f"No matching process found: {process_name}"
+    except Exception as e:
+        return f"Error killing process: {e}"
+
+
+async def get_uptime() -> str:
+    """Get system uptime."""
+    try:
+        process = await asyncio.create_subprocess_exec(
+            "uptime",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, _ = await process.communicate()
+        return stdout.decode().strip()
+    except Exception as e:
+        return f"Error getting uptime: {e}"
+
+
+async def empty_trash() -> str:
+    """Empty the Trash."""
+    script = '''
+    tell application "Finder"
+        set trashCount to count of items of trash
+        if trashCount is 0 then
+            return "Trash is already empty."
+        end if
+        empty trash
+        return "Trash emptied (" & trashCount & " items removed)."
+    end tell
+    '''
+    return await run_applescript(script)
+
+
+async def eject_all_disks() -> str:
+    """Eject all external/removable disks."""
+    script = '''
+    tell application "Finder"
+        set diskList to name of every disk whose ejectable is true
+        if (count of diskList) is 0 then
+            return "No ejectable disks found."
+        end if
+        repeat with diskName in diskList
+            eject disk diskName
+        end repeat
+        set AppleScript's text item delimiters to ", "
+        return "Ejected: " & (diskList as text)
+    end tell
+    '''
+    return await run_applescript(script)
+
+
+async def set_wallpaper(file_path: str) -> str:
+    """Set the desktop wallpaper to a given image file."""
+    safe_path = _escape_applescript(file_path)
+    script = f'''
+    tell application "System Events"
+        tell every desktop
+            set picture to "{safe_path}"
+        end tell
+    end tell
+    return "Wallpaper set to {safe_path}"
+    '''
+    return await run_applescript(script)
+
+
 async def write_to_app(text: str, app_name: str, new_document: bool = True) -> str:
     """Write text into an application using keystroke input (best for short text)."""
     if len(text) > 500:

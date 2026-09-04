@@ -26,8 +26,12 @@ data/
 *.db
 *.sqlite3
 
+# --- Face Recognition data ---
+data/face_db.json
+
 # --- Node.js / Next.js ---
 jarvis/ui/jarvis-ui/node_modules/
+screen-glow/node_modules/
 jarvis/ui/jarvis-ui/.next/
 jarvis/ui/jarvis-ui/out/
 jarvis/ui/jarvis-ui/tsconfig.tsbuildinfo

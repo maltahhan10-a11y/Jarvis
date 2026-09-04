@@ -695,6 +695,135 @@ TOOL_SCHEMAS = [
             "required": ["text", "app_name"],
         },
     },
+    # ---- macOS System (extended) ----
+    {
+        "name": "get_wifi_status",
+        "description": "Get the current Wi-Fi network name and connection status.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "toggle_wifi",
+        "description": "Turn Wi-Fi on or off.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "enable": {"type": "boolean", "description": "True to turn on, false to turn off"},
+            },
+            "required": ["enable"],
+        },
+    },
+    {
+        "name": "get_bluetooth_status",
+        "description": "Check if Bluetooth is on or off.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "toggle_dark_mode",
+        "description": "Toggle macOS dark mode on or off.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "get_dark_mode_status",
+        "description": "Check whether macOS dark mode is currently on or off.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "lock_screen",
+        "description": "Lock the screen immediately (display sleep).",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "media_play_pause",
+        "description": "Toggle play/pause for Music or Spotify.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "media_next_track",
+        "description": "Skip to the next track in Music or Spotify.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "media_previous_track",
+        "description": "Go to the previous track in Music or Spotify.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "get_current_track",
+        "description": "Get the currently playing song name and artist from Music or Spotify.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "get_active_displays",
+        "description": "Get information about connected displays (name, resolution).",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "get_disk_usage",
+        "description": "Get disk space usage (used, free, total) for the main volume.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "get_memory_pressure",
+        "description": "Get current system memory pressure (low/normal/critical).",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "get_cpu_usage",
+        "description": "Get current CPU usage percentage.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "get_network_info",
+        "description": "Get local Wi-Fi IP and public IP address.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "get_top_processes",
+        "description": "Get the top CPU-consuming processes.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "count": {"type": "integer", "description": "Number of processes to show (default 5, max 20)", "default": 5},
+            },
+        },
+    },
+    {
+        "name": "kill_process",
+        "description": "Kill a process by name. Cannot kill protected system processes.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "process_name": {"type": "string", "description": "Name of the process to kill"},
+            },
+            "required": ["process_name"],
+        },
+    },
+    {
+        "name": "get_uptime",
+        "description": "Get system uptime (how long since last boot).",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "empty_trash",
+        "description": "Empty the macOS Trash.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "eject_all_disks",
+        "description": "Safely eject all external/removable disks.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "set_wallpaper",
+        "description": "Set the desktop wallpaper to a given image file.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "file_path": {"type": "string", "description": "Absolute path to the wallpaper image"},
+            },
+            "required": ["file_path"],
+        },
+    },
     # ---- File System ----
     {
         "name": "list_directory",
@@ -2395,6 +2524,27 @@ TOOL_REGISTRY = {
     "set_clipboard": mac_control.set_clipboard,
     "paste_to_app": mac_control.paste_to_app,
     "write_to_app": mac_control.write_to_app,
+    "get_wifi_status": mac_control.get_wifi_status,
+    "toggle_wifi": mac_control.toggle_wifi,
+    "get_bluetooth_status": mac_control.get_bluetooth_status,
+    "toggle_dark_mode": mac_control.toggle_dark_mode,
+    "get_dark_mode_status": mac_control.get_dark_mode_status,
+    "lock_screen": mac_control.lock_screen,
+    "media_play_pause": mac_control.media_play_pause,
+    "media_next_track": mac_control.media_next_track,
+    "media_previous_track": mac_control.media_previous_track,
+    "get_current_track": mac_control.get_current_track,
+    "get_active_displays": mac_control.get_active_displays,
+    "get_disk_usage": mac_control.get_disk_usage,
+    "get_memory_pressure": mac_control.get_memory_pressure,
+    "get_cpu_usage": mac_control.get_cpu_usage,
+    "get_network_info": mac_control.get_network_info,
+    "get_top_processes": mac_control.get_top_processes,
+    "kill_process": mac_control.kill_process,
+    "get_uptime": mac_control.get_uptime,
+    "empty_trash": mac_control.empty_trash,
+    "eject_all_disks": mac_control.eject_all_disks,
+    "set_wallpaper": mac_control.set_wallpaper,
     # File system
     "list_directory": filesystem.list_directory,
     "read_file": filesystem.read_file,

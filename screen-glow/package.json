@@ -1,0 +1,15 @@
+{
+  "name": "jarvis-screen-glow",
+  "version": "1.0.0",
+  "description": "JARVIS wake-word screen glow overlay",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^33.0.0"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>JARVIS Glow</title>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body, html {
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    overflow: hidden;
+  }
+
+  .glow-border {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.6s ease-in-out;
+    z-index: 999999;
+  }
+
+  .glow-border.active {
+    opacity: 1;
+  }
+
+  .glow-ring {
+    position: absolute;
+    inset: -4px;
+    border-radius: 0;
+    background: conic-gradient(
+      from var(--angle, 0deg),
+      #55e8ff 0%,
+      #55e8ff33 12%,
+      #ffb648 25%,
+      #ffb64833 37%,
+      #55e8ff 50%,
+      #55e8ff33 62%,
+      #ffb648 75%,
+      #ffb64833 87%,
+      #55e8ff 100%
+    );
+    -webkit-mask:
+      linear-gradient(#000, #000) content-box,
+      linear-gradient(#000, #000);
+    mask:
+      linear-gradient(#000, #000) content-box,
+      linear-gradient(#000, #000);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    padding: 6px;
+    filter: blur(18px) brightness(1.3);
+    animation: spin 4s linear infinite;
+  }
+
+  .glow-ring-sharp {
+    position: absolute;
+    inset: -2px;
+    background: conic-gradient(
+      from var(--angle2, 180deg),
+      #55e8ff 0%,
+      transparent 15%,
+      #ffb648 25%,
+      transparent 40%,
+      #55e8ff 50%,
+      transparent 65%,
+      #ffb648 75%,
+      transparent 90%,
+      #55e8ff 100%
+    );
+    -webkit-mask:
+      linear-gradient(#000, #000) content-box,
+      linear-gradient(#000, #000);
+    mask:
+      linear-gradient(#000, #000) content-box,
+      linear-gradient(#000, #000);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    padding: 3px;
+    filter: blur(4px) brightness(1.5);
+    animation: spin-reverse 3s linear infinite;
+    opacity: 0.7;
+  }
+
+  .pulse-layer {
+    position: absolute;
+    inset: 0;
+    border: 2px solid transparent;
+    border-image: conic-gradient(
+      from 0deg,
+      #55e8ff44,
+      #ffb64844,
+      #55e8ff44,
+      #ffb64844,
+      #55e8ff44
+    ) 1;
+    animation: pulse 2s ease-in-out infinite;
+    opacity: 0.5;
+  }
+
+  @keyframes spin {
+    from { --angle: 0deg; }
+    to   { --angle: 360deg; }
+  }
+
+  @keyframes spin-reverse {
+    from { --angle2: 180deg; }
+    to   { --angle2: -180deg; }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.3; filter: blur(2px); }
+    50%      { opacity: 0.7; filter: blur(6px); }
+  }
+
+  @property --angle {
+    syntax: "<angle>";
+    initial-value: 0deg;
+    inherits: false;
+  }
+
+  @property --angle2 {
+    syntax: "<angle>";
+    initial-value: 180deg;
+    inherits: false;
+  }
+</style>
+</head>
+<body>
+  <div class="glow-border" id="glow">
+    <div class="glow-ring"></div>
+    <div class="glow-ring-sharp"></div>
+    <div class="pulse-layer"></div>
+  </div>
+
+  <script>
+    const glowEl = document.getElementById("glow");
+    let fadeTimer = null;
+    const FADE_TIMEOUT = 6000;
+
+    function wake() {
+      if (fadeTimer) { clearTimeout(fadeTimer); fadeTimer = null; }
+      glowEl.classList.add("active");
+    }
+
+    function sleep() {
+      glowEl.classList.remove("active");
+      if (fadeTimer) { clearTimeout(fadeTimer); fadeTimer = null; }
+    }
+
+    if (window.glowAPI) {
+      window.glowAPI.onGlow((data) => {
+        if (data.action === "wake") {
+          wake();
+          fadeTimer = setTimeout(sleep, data.timeout || FADE_TIMEOUT);
+        } else if (data.action === "sleep") {
+          sleep();
+        }
+      });
+    }
+  </script>
+</body>
+</html>

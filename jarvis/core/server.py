@@ -56,6 +56,9 @@ _overlay_state: str = "idle"  # idle, listening, thinking, speaking
 _overlay_text: str = ""  # latest assistant response text for overlay display
 _overlay_user_text: str = ""  # latest user utterance for overlay display
 
+# Screen glow overlay WebSocket clients
+_glow_clients: list[WebSocket] = []
+
 
 async def broadcast_overlay_state(
     new_state: str,
@@ -2779,3 +2782,45 @@ async def websocket_overlay(websocket: WebSocket):
     finally:
         if websocket in _overlay_clients:
             _overlay_clients.remove(websocket)
+
+
+async def broadcast_glow_event(event: str, timeout_ms: int = 6000):
+    """Broadcast a wake/sleep event to all connected screen-glow overlays."""
+    if not _glow_clients:
+        return
+    payload = {"event": event}
+    if event == "wake":
+        payload["timeout"] = timeout_ms
+    dead = []
+    for ws in _glow_clients:
+        try:
+            await ws.send_json(payload)
+        except Exception:
+            dead.append(ws)
+    for ws in dead:
+        _glow_clients.remove(ws)
+
+
+@app.websocket("/ws/glow")
+async def websocket_glow(websocket: WebSocket):
+    """WebSocket for screen-glow overlay (Electron). Sends wake/sleep events."""
+    if not _client_is_local(websocket):
+        await websocket.close(code=4003, reason="Glow overlay only available locally")
+        return
+
+    await websocket.accept()
+    _glow_clients.append(websocket)
+    logger.info("Screen glow overlay connected.")
+
+    try:
+        while True:
+            data = await websocket.receive_json()
+            if data.get("command") == "ping":
+                await websocket.send_json({"pong": True})
+    except WebSocketDisconnect:
+        logger.info("Screen glow overlay disconnected.")
+    except Exception as e:
+        logger.debug("Screen glow receive loop ended: %s", e)
+    finally:
+        if websocket in _glow_clients:
+            _glow_clients.remove(websocket)
