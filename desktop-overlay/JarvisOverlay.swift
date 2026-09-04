@@ -82,7 +82,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let screen = NSScreen.main ?? NSScreen.screens[0]
         let screenFrame = screen.visibleFrame
 
-        let windowSize = CGSize(width: 380, height: 460)
+        let windowSize = CGSize(width: 500, height: 600)
         let padding: CGFloat = 50
         let defaultWindowFrame = CGRect(
             x: screenFrame.maxX - windowSize.width - padding,

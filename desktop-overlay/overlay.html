@@ -28,7 +28,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
-      padding: 18px 10px 8px;
+      padding: 24px 14px 12px;
     }
 
     #status-row {
@@ -42,8 +42,8 @@
     }
 
     #status-dot {
-      width: 6px;
-      height: 6px;
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
       background: rgba(0, 212, 255, 0.3);
       transition: background 0.5s ease, box-shadow 0.5s ease;
@@ -83,7 +83,7 @@
     }
 
     #status-label {
-      font-size: 9px;
+      font-size: 11px;
       font-weight: 500;
       letter-spacing: 0.2em;
       text-transform: uppercase;
@@ -100,8 +100,8 @@
     #orb-container {
       position: relative;
       z-index: 5;
-      width: 260px;
-      height: 260px;
+      width: 360px;
+      height: 360px;
       flex-shrink: 0;
       border-radius: 50%;
       overflow: hidden;
@@ -146,9 +146,9 @@
     #text-area {
       position: relative;
       z-index: 10;
-      width: 320px;
-      max-height: 100px;
-      padding: 0 18px;
+      width: 440px;
+      max-height: 140px;
+      padding: 0 22px;
       overflow: hidden;
       text-align: center;
       text-shadow:
@@ -157,11 +157,11 @@
     }
 
     #user-text {
-      max-height: 28px;
-      margin-bottom: 6px;
+      max-height: 36px;
+      margin-bottom: 8px;
       overflow: hidden;
       color: rgba(0, 212, 255, 0.58);
-      font-size: 10px;
+      font-size: 12px;
       font-style: italic;
       line-height: 1.4;
       text-overflow: ellipsis;
@@ -180,7 +180,7 @@
       display: -webkit-box;
       overflow: hidden;
       color: rgba(255, 255, 255, 0.68);
-      font-size: 11px;
+      font-size: 13px;
       line-height: 1.5;
       opacity: 0;
       transform: translateY(6px);
@@ -310,8 +310,8 @@
       state: "idle",
       transitionIn: 1,
       audioAmplitude: 0,
-      width: 260,
-      height: 260,
+      width: 360,
+      height: 360,
     });
 
     let state = "idle";
@@ -393,6 +393,17 @@
       statusLabel.className = nextState;
       statusLabel.textContent = stateLabels[nextState];
       orb.setState(nextState);
+
+      if (nextState === "listening" || nextState === "thinking") {
+        if (glowFadeTimer) { clearTimeout(glowFadeTimer); glowFadeTimer = null; }
+        glowBorder.classList.add("active");
+      } else {
+        if (glowFadeTimer) clearTimeout(glowFadeTimer);
+        glowFadeTimer = setTimeout(() => {
+          glowBorder.classList.remove("active");
+          glowFadeTimer = null;
+        }, nextState === "speaking" ? 800 : 0);
+      }
     }
 
     function setResponseText(text) {

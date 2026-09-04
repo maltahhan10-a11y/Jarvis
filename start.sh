@@ -49,6 +49,7 @@ PROXY_PID=""
 OLLAMA_PID=""
 TUNNEL_PID=""
 OVERLAY_PID=""
+GLOW_PID=""
 OVERLAY_READY_TO_LAUNCH=""
 RUNTIME_DIR="${SCRIPT_DIR}/data/runtime"
 LIFECYCLE_FILE="${RUNTIME_DIR}/lifecycle.json"
@@ -189,6 +190,10 @@ cleanup() {
     if [[ -n "${OVERLAY_PID}" ]] && kill -0 "${OVERLAY_PID}" 2>/dev/null; then
         echo "Stopping Desktop Overlay..."
         kill "${OVERLAY_PID}" 2>/dev/null || true
+    fi
+    if [[ -n "${GLOW_PID}" ]] && kill -0 "${GLOW_PID}" 2>/dev/null; then
+        echo "Stopping Screen Glow..."
+        kill "${GLOW_PID}" 2>/dev/null || true
     fi
     # Also kill any orphaned overlay processes by name
     pkill -f "JarvisOverlay" 2>/dev/null || true
@@ -407,6 +412,20 @@ if [[ "${MODE}" == "full" ]] && [[ "${OVERLAY_READY_TO_LAUNCH}" == "true" ]] && 
     JARVIS_API_PORT="${API_PORT}" \
     "${OVERLAY_BIN}" &
     OVERLAY_PID=$!
+fi
+
+# Launch screen glow overlay (Electron, optional)
+GLOW_DIR="${SCRIPT_DIR}/screen-glow"
+if [[ "${MODE}" == "full" ]] && [[ -f "${GLOW_DIR}/package.json" ]] && command -v npx &>/dev/null; then
+    if [[ ! -d "${GLOW_DIR}/node_modules" ]]; then
+        echo "Installing screen glow dependencies..."
+        (cd "${GLOW_DIR}" && npm install --no-audit --no-fund 2>/dev/null) || true
+    fi
+    if [[ -d "${GLOW_DIR}/node_modules/electron" ]]; then
+        echo "Launching Screen Glow Overlay..."
+        (cd "${GLOW_DIR}" && JARVIS_WS_URL="ws://127.0.0.1:${API_PORT}/ws/glow" npx electron . 2>/dev/null) &
+        GLOW_PID=$!
+    fi
 fi
 
 # Start Cloudflare Tunnel for mobile/remote access when explicitly enabled.
