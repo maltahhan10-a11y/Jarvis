@@ -72,6 +72,29 @@ if not GOOGLE_CALENDAR_CLIENT_SECRET and _secret_lookup is not None:
 if not OUTLOOK_CALENDAR_CLIENT_SECRET and _secret_lookup is not None:
     OUTLOOK_CALENDAR_CLIENT_SECRET = _secret_lookup("OUTLOOK_CALENDAR_CLIENT_SECRET")
 
+GOOGLE_CALENDAR_ENABLED = os.getenv("GOOGLE_CALENDAR_ENABLED", "false").lower() in {"1", "true", "yes", "on"}
+GMAIL_ENABLED = os.getenv("GMAIL_ENABLED", "false").lower() in {"1", "true", "yes", "on"}
+GOOGLE_CREDENTIALS_FILE = os.getenv("GOOGLE_CREDENTIALS_FILE", str(DATA_DIR / "google_credentials.json"))
+GOOGLE_TOKEN_FILE = os.getenv("GOOGLE_TOKEN_FILE", str(DATA_DIR / "google_token.json"))
+
+SPOTIFY_ENABLED = os.getenv("SPOTIFY_ENABLED", "false").lower() in {"1", "true", "yes", "on"}
+SPOTIFY_CLIENT_ID = os.getenv("SPOTIFY_CLIENT_ID", "")
+SPOTIFY_CLIENT_SECRET = os.getenv("SPOTIFY_CLIENT_SECRET", "")
+SPOTIFY_REDIRECT_URI = os.getenv("SPOTIFY_REDIRECT_URI", "http://localhost:8741/callback/spotify")
+if not SPOTIFY_CLIENT_SECRET and _secret_lookup is not None:
+    SPOTIFY_CLIENT_SECRET = _secret_lookup("SPOTIFY_CLIENT_SECRET")
+
+HOME_ASSISTANT_ENABLED = os.getenv("HOME_ASSISTANT_ENABLED", "false").lower() in {"1", "true", "yes", "on"}
+HOME_ASSISTANT_URL = os.getenv("HOME_ASSISTANT_URL", "http://homeassistant.local:8123")
+HOME_ASSISTANT_TOKEN = os.getenv("HOME_ASSISTANT_TOKEN", "")
+if not HOME_ASSISTANT_TOKEN and _secret_lookup is not None:
+    HOME_ASSISTANT_TOKEN = _secret_lookup("HOME_ASSISTANT_TOKEN")
+
+TODOIST_ENABLED = os.getenv("TODOIST_ENABLED", "false").lower() in {"1", "true", "yes", "on"}
+TODOIST_API_KEY = os.getenv("TODOIST_API_KEY", "")
+if not TODOIST_API_KEY and _secret_lookup is not None:
+    TODOIST_API_KEY = _secret_lookup("TODOIST_API_KEY")
+
 # Maximum per-request cost premium (above the brain tier estimate) before the
 # tier router downgrades a deep-tier request to brain. Set to 0 to disable
 # cost-based downgrades entirely.

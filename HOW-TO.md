@@ -489,3 +489,104 @@ Adjust `COST_DAILY_ALERT` in `.env`. Set `PREFER_CLAUDE=false` to default to loc
 
 **Port conflicts:**
 JARVIS uses ports 3000 (UI) and 8741 (API) by default. If something else is using those ports, JARVIS will attempt to kill orphaned processes on startup. You can override both with `API_PORT` and `UI_PORT` in `.env`.
+
+---
+
+## API Integrations
+
+JARVIS supports optional integrations with external services. Each is disabled by default and controlled by a flag in `.env`.
+
+### Google Calendar API
+
+1. Create a project in [Google Cloud Console](https://console.cloud.google.com/)
+2. Enable the Google Calendar API
+3. Create OAuth 2.0 credentials (Desktop app type)
+4. Download the JSON and save to `data/google_credentials.json`
+5. Add to `.env`:
+   ```
+   GOOGLE_CALENDAR_ENABLED=true
+   ```
+6. On first use, a browser window opens for OAuth consent. The token is saved to `data/google_token.json`.
+
+**Tools:** `gcal_list_events`, `gcal_create_event`, `gcal_search_events`, `gcal_delete_event`, `gcal_list_calendars`
+
+### Gmail API
+
+Uses the same Google OAuth credentials as Calendar.
+
+1. Enable the Gmail API in the same Google Cloud project
+2. Add to `.env`:
+   ```
+   GMAIL_ENABLED=true
+   ```
+3. If Calendar was already authorized, Gmail will re-auth to add the `gmail.modify` scope (read + drafts, not send).
+
+**Tools:** `gmail_get_inbox`, `gmail_get_unread_count`, `gmail_read_email`, `gmail_search`, `gmail_send_draft`, `gmail_list_labels`
+
+> **Safety:** `gmail_send_draft` creates drafts only — it never auto-sends. Review in Gmail before sending.
+
+### Spotify API
+
+1. Create an app at [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
+2. Set the redirect URI to `http://localhost:8741/callback/spotify`
+3. Add to `.env`:
+   ```
+   SPOTIFY_ENABLED=true
+   SPOTIFY_CLIENT_ID=your_client_id
+   SPOTIFY_CLIENT_SECRET=your_client_secret
+   ```
+4. On first use, a browser window opens for Spotify OAuth. Token is cached locally.
+
+**Tools:** `spotify_now_playing`, `spotify_play_pause`, `spotify_next_track`, `spotify_previous_track`, `spotify_search`, `spotify_play_track`, `spotify_set_volume`, `spotify_get_playlists`
+
+### Home Assistant
+
+1. Generate a long-lived access token in Home Assistant (Profile → Security → Long-Lived Access Tokens)
+2. Add to `.env`:
+   ```
+   HOME_ASSISTANT_ENABLED=true
+   HOME_ASSISTANT_URL=http://homeassistant.local:8123
+   HOME_ASSISTANT_TOKEN=your_token
+   ```
+
+**Tools:** `ha_list_devices`, `ha_get_state`, `ha_turn_on`, `ha_turn_off`, `ha_set_brightness`, `ha_set_temperature`
+
+### Todoist
+
+1. Get your API token from [Todoist Settings → Integrations → Developer](https://todoist.com/prefs/integrations)
+2. Add to `.env`:
+   ```
+   TODOIST_ENABLED=true
+   TODOIST_API_KEY=your_api_key
+   ```
+
+**Tools:** `todoist_get_tasks`, `todoist_add_task`, `todoist_complete_task`, `todoist_get_projects`, `todoist_search_tasks`
+
+### Adding a New Integration
+
+1. Create `jarvis/tools/your_integration.py` with async functions returning `str`
+2. Add a `YOUR_INTEGRATION_ENABLED` flag to `jarvis/config/settings.py`
+3. Add tool schemas to `TOOL_SCHEMAS` in `jarvis/agent/tools_schema.py`
+4. Add function mappings to `TOOL_REGISTRY` in the same file
+5. Import the module at the top of `tools_schema.py`
+
+### Adding a New Sub-Agent
+
+The coordinator at `jarvis/agent/coordinator.py` dispatches to domain-specific agents. To add a new agent type:
+
+1. Add a new `AgentType` enum value in `coordinator.py`
+2. Define the agent's system prompt in `AGENT_PROMPTS`
+3. Add routing logic in `_route_to_agent()` to match relevant tool names
+4. The agent automatically inherits access to all registered tools
+
+---
+
+## Desktop Overlay Controls
+
+The native Swift overlay supports:
+
+- **Drag:** Click and drag anywhere on the overlay to reposition
+- **Resize:** Drag the bottom-right corner handle
+- **Minimize to corner:** Click the minimize button (top-right) or press `Ctrl+Option+M`. The overlay shrinks to a small pulsing orb in the bottom-right corner. Click it or press the same hotkey to restore.
+- **Activate voice:** Press `Ctrl+Option+J` (also restores from minimized state)
+- **Position memory:** The overlay remembers its position and size across restarts

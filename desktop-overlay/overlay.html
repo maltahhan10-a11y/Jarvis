@@ -194,6 +194,86 @@
       transform: translateY(0);
     }
 
+    /* ---- Minimize button ---- */
+    #minimize-btn {
+      position: fixed;
+      top: 6px;
+      right: 6px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      cursor: pointer;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+    #minimize-btn:hover {
+      background: rgba(255, 255, 255, 0.18);
+    }
+    #minimize-btn::after {
+      content: "";
+      width: 10px;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 1px;
+    }
+
+    /* ---- Resize handle ---- */
+    #resize-handle {
+      position: fixed;
+      bottom: 0;
+      right: 0;
+      width: 20px;
+      height: 20px;
+      cursor: nwse-resize;
+      z-index: 1000;
+    }
+    #resize-handle::after {
+      content: "";
+      position: absolute;
+      bottom: 4px;
+      right: 4px;
+      width: 8px;
+      height: 8px;
+      border-right: 2px solid rgba(255, 255, 255, 0.15);
+      border-bottom: 2px solid rgba(255, 255, 255, 0.15);
+    }
+
+    /* ---- Minimized mode ---- */
+    body.minimized #container,
+    body.minimized #glow-border,
+    body.minimized #minimize-btn,
+    body.minimized #resize-handle {
+      display: none !important;
+    }
+    body.minimized #mini-orb {
+      display: flex !important;
+    }
+    #mini-orb {
+      display: none;
+      position: fixed;
+      inset: 0;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    #mini-orb .dot {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(0, 212, 255, 0.5) 0%, rgba(0, 5, 12, 0.8) 70%);
+      box-shadow: 0 0 16px rgba(0, 212, 255, 0.3);
+      animation: miniPulse 2.5s ease-in-out infinite;
+    }
+    @keyframes miniPulse {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 16px rgba(0, 212, 255, 0.3); }
+      50% { transform: scale(1.08); box-shadow: 0 0 24px rgba(0, 212, 255, 0.45); }
+    }
+
     /* ---- Wake glow border ---- */
     #glow-border {
       position: fixed;
@@ -270,6 +350,9 @@
   </style>
 </head>
 <body>
+  <div id="minimize-btn" title="Minimize (Ctrl+Option+M)"></div>
+  <div id="resize-handle"></div>
+  <div id="mini-orb" title="Click to restore"><div class="dot"></div></div>
   <div id="glow-border">
     <div class="glow-ring"></div>
     <div class="glow-ring-inner"></div>
@@ -487,6 +570,25 @@
 
     window.addEventListener("resize", () => orb.resize());
     window.addEventListener("beforeunload", () => orb.dispose());
+
+    document.getElementById("minimize-btn").addEventListener("click", () => {
+      if (window.webkit?.messageHandlers?.jarvisOverlay) {
+        window.webkit.messageHandlers.jarvisOverlay.postMessage("toggleMinimize");
+      }
+    });
+
+    document.getElementById("mini-orb").addEventListener("click", () => {
+      if (window.webkit?.messageHandlers?.jarvisOverlay) {
+        window.webkit.messageHandlers.jarvisOverlay.postMessage("toggleMinimize");
+      }
+    });
+
+    window.jarvisSetMinimized = function(minimized) {
+      document.body.classList.toggle("minimized", minimized);
+      if (!minimized) {
+        setTimeout(() => orb.resize(), 350);
+      }
+    };
 
     setState("idle");
     connectWebSocket();

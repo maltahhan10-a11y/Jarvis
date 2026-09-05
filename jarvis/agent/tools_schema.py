@@ -20,11 +20,16 @@ from jarvis.tools import (
     chrome_extension,
     claude_code,
     filesystem,
+    gmail,
+    google_calendar,
+    home_assistant,
     mac_control,
     notes_access,
     public_data,
     screen,
     shell,
+    spotify,
+    todoist,
     weather,
     web_browse,
     web_search,
@@ -2504,6 +2509,344 @@ TOOL_SCHEMAS = [
             "required": [],
         },
     },
+    # --- Google Calendar API ---
+    {
+        "name": "gcal_list_events",
+        "description": "List upcoming Google Calendar events for the next N days.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "days": {
+                    "type": "integer",
+                    "description": "Number of days to look ahead (default: 1, max: 90).",
+                    "default": 1,
+                },
+            },
+            "required": [],
+        },
+    },
+    {
+        "name": "gcal_create_event",
+        "description": "Create a Google Calendar event. Requires explicit user confirmation before calling.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "title": {"type": "string", "description": "Event title."},
+                "start_time": {"type": "string", "description": "Start time in ISO 8601 format."},
+                "end_time": {"type": "string", "description": "End time in ISO 8601 (defaults to 1 hour after start)."},
+                "description": {"type": "string", "description": "Event description."},
+                "location": {"type": "string", "description": "Event location."},
+                "calendar_id": {"type": "string", "description": "Calendar ID (default: 'primary').", "default": "primary"},
+            },
+            "required": ["title", "start_time"],
+        },
+    },
+    {
+        "name": "gcal_search_events",
+        "description": "Search Google Calendar events by query string.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "Search query."},
+                "days": {"type": "integer", "description": "Number of days to search (default: 30).", "default": 30},
+            },
+            "required": ["query"],
+        },
+    },
+    {
+        "name": "gcal_delete_event",
+        "description": "Delete a Google Calendar event by ID. Requires explicit user confirmation.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "event_id": {"type": "string", "description": "Event ID to delete."},
+                "calendar_id": {"type": "string", "description": "Calendar ID (default: 'primary').", "default": "primary"},
+            },
+            "required": ["event_id"],
+        },
+    },
+    {
+        "name": "gcal_list_calendars",
+        "description": "List all available Google Calendars.",
+        "input_schema": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+    },
+    # --- Gmail API ---
+    {
+        "name": "gmail_get_inbox",
+        "description": "Get recent inbox messages with sender, subject, snippet, and date.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "count": {"type": "integer", "description": "Number of messages (default: 10, max: 50).", "default": 10},
+            },
+            "required": [],
+        },
+    },
+    {
+        "name": "gmail_get_unread_count",
+        "description": "Get the number of unread emails in Gmail.",
+        "input_schema": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+    },
+    {
+        "name": "gmail_read_email",
+        "description": "Read the full content of a Gmail email by message ID.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "message_id": {"type": "string", "description": "Gmail message ID."},
+            },
+            "required": ["message_id"],
+        },
+    },
+    {
+        "name": "gmail_search",
+        "description": "Search emails using Gmail query syntax (e.g. 'from:user@example.com', 'subject:invoice', 'is:unread').",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "Gmail search query."},
+                "count": {"type": "integer", "description": "Max results (default: 10).", "default": 10},
+            },
+            "required": ["query"],
+        },
+    },
+    {
+        "name": "gmail_send_draft",
+        "description": "Create a Gmail DRAFT (never auto-sends). User must review in Gmail before sending.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "to": {"type": "string", "description": "Recipient email address."},
+                "subject": {"type": "string", "description": "Email subject."},
+                "body": {"type": "string", "description": "Email body text."},
+            },
+            "required": ["to", "subject", "body"],
+        },
+    },
+    {
+        "name": "gmail_list_labels",
+        "description": "List all Gmail labels.",
+        "input_schema": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+    },
+    # --- Spotify ---
+    {
+        "name": "spotify_now_playing",
+        "description": "Get the currently playing track on Spotify.",
+        "input_schema": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+    },
+    {
+        "name": "spotify_play_pause",
+        "description": "Toggle Spotify playback between play and pause.",
+        "input_schema": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+    },
+    {
+        "name": "spotify_next_track",
+        "description": "Skip to the next track on Spotify.",
+        "input_schema": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+    },
+    {
+        "name": "spotify_previous_track",
+        "description": "Go back to the previous track on Spotify.",
+        "input_schema": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+    },
+    {
+        "name": "spotify_search",
+        "description": "Search Spotify for tracks, artists, albums, or playlists.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "Search query."},
+                "search_type": {"type": "string", "description": "Type: track, artist, album, playlist.", "default": "track"},
+                "limit": {"type": "integer", "description": "Max results (default: 5).", "default": 5},
+            },
+            "required": ["query"],
+        },
+    },
+    {
+        "name": "spotify_play_track",
+        "description": "Search for a track and play the first result on Spotify.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "Track search query (e.g. 'Bohemian Rhapsody Queen')."},
+            },
+            "required": ["query"],
+        },
+    },
+    {
+        "name": "spotify_set_volume",
+        "description": "Set Spotify playback volume (0-100).",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "volume": {"type": "integer", "description": "Volume level 0-100."},
+            },
+            "required": ["volume"],
+        },
+    },
+    {
+        "name": "spotify_get_playlists",
+        "description": "List the user's Spotify playlists.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "limit": {"type": "integer", "description": "Max playlists (default: 10).", "default": 10},
+            },
+            "required": [],
+        },
+    },
+    # --- Home Assistant ---
+    {
+        "name": "ha_list_devices",
+        "description": "List all Home Assistant devices (lights, switches, sensors, climate).",
+        "input_schema": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+    },
+    {
+        "name": "ha_get_state",
+        "description": "Get the current state of a Home Assistant entity.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "entity_id": {"type": "string", "description": "Entity ID (e.g. 'light.living_room')."},
+            },
+            "required": ["entity_id"],
+        },
+    },
+    {
+        "name": "ha_turn_on",
+        "description": "Turn on a Home Assistant device. Requires user confirmation.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "entity_id": {"type": "string", "description": "Entity ID to turn on."},
+            },
+            "required": ["entity_id"],
+        },
+    },
+    {
+        "name": "ha_turn_off",
+        "description": "Turn off a Home Assistant device. Requires user confirmation.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "entity_id": {"type": "string", "description": "Entity ID to turn off."},
+            },
+            "required": ["entity_id"],
+        },
+    },
+    {
+        "name": "ha_set_brightness",
+        "description": "Set brightness of a Home Assistant light (0-255).",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "entity_id": {"type": "string", "description": "Light entity ID."},
+                "brightness": {"type": "integer", "description": "Brightness 0-255."},
+            },
+            "required": ["entity_id", "brightness"],
+        },
+    },
+    {
+        "name": "ha_set_temperature",
+        "description": "Set target temperature on a Home Assistant thermostat.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "entity_id": {"type": "string", "description": "Climate entity ID."},
+                "temperature": {"type": "number", "description": "Target temperature."},
+            },
+            "required": ["entity_id", "temperature"],
+        },
+    },
+    # --- Todoist ---
+    {
+        "name": "todoist_get_tasks",
+        "description": "List active Todoist tasks, optionally filtered by project name.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "project": {"type": "string", "description": "Project name to filter by (optional)."},
+            },
+            "required": [],
+        },
+    },
+    {
+        "name": "todoist_add_task",
+        "description": "Add a new Todoist task. Requires user confirmation.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "content": {"type": "string", "description": "Task content."},
+                "due_string": {"type": "string", "description": "Due date in natural language (e.g. 'tomorrow', 'next Monday')."},
+                "priority": {"type": "integer", "description": "Priority 1-4 (4 is urgent).", "default": 1},
+                "project": {"type": "string", "description": "Project name to add to (optional)."},
+            },
+            "required": ["content"],
+        },
+    },
+    {
+        "name": "todoist_complete_task",
+        "description": "Mark a Todoist task as complete. Requires user confirmation.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "task_id": {"type": "string", "description": "Task ID to complete."},
+            },
+            "required": ["task_id"],
+        },
+    },
+    {
+        "name": "todoist_get_projects",
+        "description": "List all Todoist projects.",
+        "input_schema": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+    },
+    {
+        "name": "todoist_search_tasks",
+        "description": "Search/filter Todoist tasks using filter syntax (e.g. 'today', 'overdue', 'p1').",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "Todoist filter query."},
+            },
+            "required": ["query"],
+        },
+    },
 ]
 
 
@@ -2654,6 +2997,41 @@ TOOL_REGISTRY = {
     "search_notes": notes_access.search_notes,
     "create_note": notes_access.create_note,
     "get_note_folders": notes_access.get_note_folders,
+    # Google Calendar API
+    "gcal_list_events": google_calendar.gcal_list_events,
+    "gcal_create_event": google_calendar.gcal_create_event,
+    "gcal_search_events": google_calendar.gcal_search_events,
+    "gcal_delete_event": google_calendar.gcal_delete_event,
+    "gcal_list_calendars": google_calendar.gcal_list_calendars,
+    # Gmail API
+    "gmail_get_inbox": gmail.gmail_get_inbox,
+    "gmail_get_unread_count": gmail.gmail_get_unread_count,
+    "gmail_read_email": gmail.gmail_read_email,
+    "gmail_search": gmail.gmail_search,
+    "gmail_send_draft": gmail.gmail_send_draft,
+    "gmail_list_labels": gmail.gmail_list_labels,
+    # Spotify
+    "spotify_now_playing": spotify.spotify_now_playing,
+    "spotify_play_pause": spotify.spotify_play_pause,
+    "spotify_next_track": spotify.spotify_next_track,
+    "spotify_previous_track": spotify.spotify_previous_track,
+    "spotify_search": spotify.spotify_search,
+    "spotify_play_track": spotify.spotify_play_track,
+    "spotify_set_volume": spotify.spotify_set_volume,
+    "spotify_get_playlists": spotify.spotify_get_playlists,
+    # Home Assistant
+    "ha_list_devices": home_assistant.ha_list_devices,
+    "ha_get_state": home_assistant.ha_get_state,
+    "ha_turn_on": home_assistant.ha_turn_on,
+    "ha_turn_off": home_assistant.ha_turn_off,
+    "ha_set_brightness": home_assistant.ha_set_brightness,
+    "ha_set_temperature": home_assistant.ha_set_temperature,
+    # Todoist
+    "todoist_get_tasks": todoist.todoist_get_tasks,
+    "todoist_add_task": todoist.todoist_add_task,
+    "todoist_complete_task": todoist.todoist_complete_task,
+    "todoist_get_projects": todoist.todoist_get_projects,
+    "todoist_search_tasks": todoist.todoist_search_tasks,
 }
 
 
